@@ -6,6 +6,7 @@ namespace AuthServer.Repositories
     {
         User GetUserByUsername(string username);
         User GetUserByEmail(string email);
+        User GetUserById(string userId);
         User CreateUser(User user);
 
     }

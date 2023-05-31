@@ -17,6 +17,12 @@ namespace AuthServer.Repositories
             return userByEmail;
         }
 
+        public User GetUserById(string userId)
+        {
+            var userById = _users.FirstOrDefault(o => o.Id == userId);
+            return userById;
+        }
+
         public User CreateUser(User user)
         {
             _users.Add(user);

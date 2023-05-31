@@ -7,7 +7,9 @@ builder.Services.AddSingleton(authenticationConfiguration);
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IHashService, HashService>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-builder.Services.AddSingleton<AccessTokenGenerator>();
+builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
+builder.Services.AddSingleton<TokenGenerator>();
+builder.Services.AddSingleton<RefreshTokenValidator>();
 
 
 

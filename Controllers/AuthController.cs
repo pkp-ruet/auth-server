@@ -12,13 +12,17 @@ namespace AuthServer.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly IHashService _hashService;
-        private readonly AccessTokenGenerator _tokenGenerator;
+        private readonly TokenGenerator _tokenGenerator;
+        private readonly RefreshTokenValidator _refreshTokenValidator;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-        public AuthController(IUserRepository userRepository, IHashService hashService, AccessTokenGenerator tokenGenerator)
+        public AuthController(IUserRepository userRepository, IHashService hashService, TokenGenerator tokenGenerator, RefreshTokenValidator refreshTokenValidator, IRefreshTokenRepository refreshTokenRepository)
         {
             _userRepository = userRepository;
             _hashService = hashService;
             _tokenGenerator = tokenGenerator;
+            _refreshTokenValidator = refreshTokenValidator;
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         [HttpPost("register")]
@@ -77,8 +81,56 @@ namespace AuthServer.Controllers
                 return Unauthorized();
             }
 
-            string accessToken = _tokenGenerator.GenerateToken(user);
-            return Ok(new AuthenticatedUserResponse() {AccessToken = accessToken});
+            var response = GetAuthenticatedUserResponse(user);
+            return Ok(response);
+        }
+
+        private AuthenticatedUserResponse GetAuthenticatedUserResponse(User user)
+        {
+            string accessToken = _tokenGenerator.GenerateAccessToken(user);
+            string refreshToken = _tokenGenerator.GenerateRefreshToken();
+            RefreshToken refreshTokenDTO = new RefreshToken()
+            {
+                Token = refreshToken,
+                UserId = user.Id
+            };
+            _refreshTokenRepository.Create(refreshTokenDTO);
+            return new AuthenticatedUserResponse()
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            };
+        }
+
+        [HttpPost("refresh")]
+
+        public IActionResult Refresh([FromBody] RefreshRequest refreshRequest)
+        {
+            if (!ModelState.IsValid)
+            {
+                ReturnBadRequestResponse();
+            }
+
+            if (!_refreshTokenValidator.Validate(refreshRequest.RefreshToken))
+            {
+                return BadRequest(new ErrorResponse("Invalid refresh token"));
+            }
+
+            RefreshToken refreshTokenDTO = _refreshTokenRepository.GetByToken(refreshRequest.RefreshToken);
+            if (refreshTokenDTO == null)
+            {
+                return BadRequest(new ErrorResponse("Invalid refresh token"));
+            }
+
+            var user = _userRepository.GetUserById(refreshTokenDTO.UserId);
+            if (user == null)
+            {
+                return BadRequest(new ErrorResponse("User not found"));
+            }
+            _refreshTokenRepository.Delete(refreshTokenDTO.Id);
+            var response = GetAuthenticatedUserResponse(user);
+            return Ok(response);
+
         }
 
         private IActionResult ReturnBadRequestResponse()
