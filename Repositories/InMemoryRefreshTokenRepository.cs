@@ -21,5 +21,10 @@ namespace AuthServer.Repositories
         {
             refreshTokens.RemoveAll(o => o.Id==id);
         }
+
+        public void DeleteAll(string userId)
+        {
+            refreshTokens.RemoveAll(o => o.UserId == userId);
+        }
     }
 }

@@ -7,5 +7,6 @@ namespace AuthServer.Repositories
         void Create(RefreshToken refreshToken);
         RefreshToken GetByToken(string token);
         void Delete(string id);
+        void DeleteAll(string userId);
     }
 }

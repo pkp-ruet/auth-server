@@ -1,6 +1,8 @@
-﻿using AuthServer.Models;
+﻿using System.Security.Claims;
+using AuthServer.Models;
 using AuthServer.Repositories;
 using AuthServer.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -131,6 +133,20 @@ namespace AuthServer.Controllers
             var response = GetAuthenticatedUserResponse(user);
             return Ok(response);
 
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+
+        public IActionResult Logout()
+        {
+            var id = HttpContext.User.FindFirstValue("id");
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+            _refreshTokenRepository.DeleteAll(id);
+            return NoContent();
         }
 
         private IActionResult ReturnBadRequestResponse()
